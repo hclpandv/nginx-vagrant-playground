@@ -1,0 +1,40 @@
+- name: Install and Configure nginx as a loadbalancer for backend web1 and web2 servers
+  hosts: all
+  become: true
+  become_method: sudo
+  tasks:
+    - name: Install packages
+      apt: 
+        update_cache: yes 
+        name: "{{ packages }}" 
+        state: present
+      vars:
+        packages:
+        - git
+        - python-pip
+        - curl
+        - nginx
+          
+    - name: Configure ngnix as loadbalancer
+      template:
+        src: "templates/vikilb.local.j2"
+        dest: "/etc/nginx/sites-available/vikilb.local"
+      become: yes
+    
+    - name: Create symlink for the added config
+      file:
+        src: "/etc/nginx/sites-available/vikilb.local"
+        dest: "/etc/nginx/sites-enabled/vikilb.local"
+        state: link
+
+    - name: Remove default nginx config
+      file:
+        path: "/etc/nginx/sites-enabled/default"
+        state: absent
+
+    - name: Restart ngnix service
+      service:
+        name: nginx
+        state: restarted
+      become: yes 
+ 
